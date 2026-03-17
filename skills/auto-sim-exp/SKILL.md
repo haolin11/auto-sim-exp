@@ -92,7 +92,7 @@ Use `send_command_input`:
 
 ---
 
-### Step 8 — Launch Gazebo Simulation
+### Step 8 — Launch arena Simulation
 
 Use `send_command_input`:
 - `CommandId`: `SSH_ID`
@@ -101,42 +101,43 @@ Use `send_command_input`:
 
 ---
 
-### Step 9 — Wait for Flight
+### Step 9 — Wait for Flight and Take Screenshot
 
-To ensure a strict ~30-second delay before exit, send two consecutive empty inputs with maximum `WaitMs` delays.
+To let the drone fly for ~30 seconds, use the `command_status` tool to pause your execution. **Do NOT send empty `\n` to the terminal during this time**, as it can interrupt the simulation shell causing it to fail.
 
-First wait:
-- `CommandId`: `SSH_ID`
-- `Input`: `\n`
-- `WaitMs`: `10000`
+1. **First Wait (20s)**: Use the `command_status` tool:
+   - `CommandId`: `SSH_ID`
+   - `WaitDurationSeconds`: `20`
+   - `OutputCharacterCount`: `500`
 
-Second wait:
-- `CommandId`: `SSH_ID`
-- `Input`: `\n`
-- `WaitMs`: `10000`
+2. **Screenshot Task (at 20 seconds)**: Use a NEW `run_command` tool call to take a screenshot and transfer it:
+   - `CommandLine`: `ssh zgc5090 "DISPLAY=:1 scrot /tmp/sim_screen.png"; scp zgc5090:/tmp/sim_screen.png $env:USERPROFILE\Desktop\`
+   - `WaitMsBeforeAsync`: `5000`
 
-Third wait:
-- `CommandId`: `SSH_ID`
-- `Input`: `\n`
-- `WaitMs`: `10000`
+3. **Second Wait (10s)**: Use the `command_status` tool again to finish the flight time:
+   - `CommandId`: `SSH_ID`
+   - `WaitDurationSeconds`: `10`
+   - `OutputCharacterCount`: `500`
 
 ---
 
 ### Step 10 — Stop Simulation
 
-Send an interrupt (Ctrl+C) to gracefully stop the simulation:
+Send multiple interrupts (Ctrl+C) via `send_command_input` to forcefully stop the simulation (roslaunch and arena often ignore a single `\x03`):
 - `CommandId`: `SSH_ID`
-- `Input`: `\x03`
-- `WaitMs`: `500`
+- `Input`: `\x03\x03\x03\n`
+- `WaitMs`: `5000`
 
 ---
 
 ### Step 11 — Wait for Simulation to Close
 
-Use `command_status` to wait for the simulation to cleanly exit, indicated by the word `done` and the return of the bash prompt (e.g., `root@2x5090-1:~/ws/diffaero-deploy#`). You may need to loop this step until the prompt appears.
+Use `command_status` to wait for the simulation to cleanly exit and the bash prompt to return (e.g., `root@2x5090-1:~/ws/diffaero-deploy#`).
 - `CommandId`: `SSH_ID`
 - `WaitDurationSeconds`: `15`
 - `OutputCharacterCount`: `2000`
+
+*(Fallback: If the prompt does not return and processes are stuck, forcefully kill them by sending `killall -9 roslaunch rviz gzserver gzclient\n` via `send_command_input`, wait `2000`ms, and send `\n` to clear the prompt).*
 
 ---
 
