@@ -1,6 +1,6 @@
 ---
 name: auto-sim-exp
-description: Run a UAV simulation experiment on a remote server via SSH. Launches the Docker environment, sets up ROS and PX4, starts the Gazebo simulation, executes a takeoff-and-land flight, then cleanly terminates the session.
+description: Run a UAV simulation experiment on a remote server via SSH. Launches the Docker environment, sets up ROS and PX4, starts the rviz simulation, then cleanly terminates the session.
 ---
 
 # Auto Simulation Experiment
@@ -12,7 +12,7 @@ Autonomously execute a full UAV simulation experiment on a remote host over SSH.
 Activate this skill when the user asks to:
 - Run a simulation experiment
 - Test a flight in simulation
-- Execute a takeoff-and-land experiment in Gazebo
+- Execute a uav experiment in remote server
 - Run `/run_simulation_experiment`
 
 ## Connection Details
@@ -96,64 +96,33 @@ Use `send_command_input`:
 
 Use `send_command_input`:
 - `CommandId`: `SSH_ID`
-- `Input`: `DISPLAY=:1 roslaunch accel_control oa_gazebo.launch\n`
+- `Input`: `DISPLAY=:1 roslaunch accel_control yopo_oa_arena.launch path:=/root/ws/train/2026-03-17/20-44-19/checkpoints/exported_20260317_212442\n`
 - `WaitMs`: `500`
 
 ---
 
-### Step 9 — Wait for Simulator
+### Step 9 — Wait for Flight
 
-Use `command_status` to wait and check for `Ready for takeoff!`. You must verify this text appears in the output before proceeding to takeoff. (You may need to loop `command_status` if it hasn't appeared yet).
-- `CommandId`: `SSH_ID`
-- `WaitDurationSeconds`: `8`
-- `OutputCharacterCount`: `2000`
-
----
-
-### Step 10 — Takeoff
-
-Use `send_command_input`:
-- `CommandId`: `SSH_ID`
-- `Input`: `commander takeoff\n`
-- `WaitMs`: `500`
-
----
-
-### Step 11 — Wait for Flight
-
-To ensure a strict ~18-second delay before landing, send two consecutive empty inputs with maximum `WaitMs` delays.
+To ensure a strict ~30-second delay before exit, send two consecutive empty inputs with maximum `WaitMs` delays.
 
 First wait:
 - `CommandId`: `SSH_ID`
 - `Input`: `\n`
-- `WaitMs`: `9000`
+- `WaitMs`: `10000`
 
 Second wait:
 - `CommandId`: `SSH_ID`
 - `Input`: `\n`
-- `WaitMs`: `9000`
+- `WaitMs`: `10000`
 
----
-
-### Step 12 — Land
-
-Use `send_command_input`:
+Third wait:
 - `CommandId`: `SSH_ID`
-- `Input`: `commander land\n`
-- `WaitMs`: `500`
+- `Input`: `\n`
+- `WaitMs`: `10000`
 
 ---
 
-### Step 13 — Wait for Landing Completion
-
-Use `command_status` to wait 8 seconds for the landing sequence and logs to close:
-- `CommandId`: `SSH_ID`
-- `WaitDurationSeconds`: `10`
-- `OutputCharacterCount`: `0`
-
----
-
-### Step 14 — Stop Simulation
+### Step 10 — Stop Simulation
 
 Send an interrupt (Ctrl+C) to gracefully stop the simulation:
 - `CommandId`: `SSH_ID`
@@ -162,7 +131,7 @@ Send an interrupt (Ctrl+C) to gracefully stop the simulation:
 
 ---
 
-### Step 15 — Wait for Simulation to Close
+### Step 11 — Wait for Simulation to Close
 
 Use `command_status` to wait for the simulation to cleanly exit, indicated by the word `done` and the return of the bash prompt (e.g., `root@2x5090-1:~/ws/diffaero-deploy#`). You may need to loop this step until the prompt appears.
 - `CommandId`: `SSH_ID`
@@ -171,7 +140,7 @@ Use `command_status` to wait for the simulation to cleanly exit, indicated by th
 
 ---
 
-### Step 16 — Exit Docker Container
+### Step 12 — Exit Docker Container
 
 Use `send_command_input`:
 - `CommandId`: `SSH_ID`
@@ -180,7 +149,7 @@ Use `send_command_input`:
 
 ---
 
-### Step 17 — Exit SSH Session
+### Step 13 — Exit SSH Session
 
 Use `send_command_input`:
 - `CommandId`: `SSH_ID`
@@ -189,7 +158,7 @@ Use `send_command_input`:
 
 ---
 
-### Step 18 — Verify SSH Exit
+### Step 14 — Verify SSH Exit
 
 Use `command_status` to ensure the SSH session cleanly logs out:
 - `CommandId`: `SSH_ID`
@@ -198,7 +167,7 @@ Use `command_status` to ensure the SSH session cleanly logs out:
 
 ---
 
-### Step 19 — Terminate Local Command
+### Step 15 — Terminate Local Command
 
 Explicitly terminate the local run_command task object:
 - `CommandId`: `SSH_ID`
@@ -211,5 +180,5 @@ Explicitly terminate the local run_command task object:
 - **Run everything yourself** — never ask the user to execute any command.
 - **Never send commands during waits** — when waiting between steps, only use `command_status` to pause yourself. Do not send `sleep` or any other commands to the remote terminal.
 - **Each `send_command_input` call sends exactly one command** to the remote terminal, then waits the specified `WaitMs`.
-- **Report progress** — briefly inform the user at key milestones (simulation launched, takeoff detected, landing complete).
+- **Report progress** — briefly inform the user at key milestones (simulation launched, fly, exit).
 - **Handle errors** — if a step fails (e.g., docker not running, roslaunch fails), read the terminal output via `command_status`, report the error to the user, and terminate the session cleanly.
