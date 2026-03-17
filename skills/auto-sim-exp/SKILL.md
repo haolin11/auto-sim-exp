@@ -19,7 +19,7 @@ Activate this skill when the user asks to:
 
 | Parameter   | Value                       |
 |-------------|-----------------------------|
-| SSH command | `ssh -p 6000 chl@101.201.76.56` |
+| SSH command | `ssh zgc5090` |
 | Deploy path | `/home/chl/diffaero_isaac/source/diffaero/deploy` |
 | Docker      | `python docker.py` |
 | ROS ws      | `/diffaero-deploy/` (inside Docker) |
@@ -31,7 +31,7 @@ Execute **every step below in order**. All steps run autonomously — never ask 
 ### Step 1 — Open SSH Session
 
 Use the `run_command` tool:
-- `CommandLine`: `ssh -p 6000 chl@101.201.76.56`
+- `CommandLine`: `ssh zgc5090`
 - `WaitMsBeforeAsync`: `5000`
 
 Save the returned `CommandId` as `SSH_ID`. It is used in every `send_command_input` call below.
